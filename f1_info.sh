@@ -1,15 +1,18 @@
 #!/bin/bash
 
-# Replace when it's not running locally
-API_URL="http://127.0.0.1:5000/events/next"
+pad_line() {
+    local text="$1"
+    local width=80
+    printf "%-${width}s\n" "$text"
+}
 
+API_URL="http://127.0.0.1:5000/events/next"
 RESPONSE=$(curl -s "$API_URL")
 
 COUNTRY=$(echo "$RESPONSE" | jq -r '.Country')
-echo "Next Race in: $COUNTRY"
-echo "------------------------"
+pad_line "Next Race in: $COUNTRY"
+pad_line "------------------------"
 
-# Loop through all fields (excluding "Country")
 FIELDS=$(echo "$RESPONSE" | jq -r 'to_entries[] | select(.key != "Country") | @base64')
 
 for field in $FIELDS; do
@@ -20,8 +23,8 @@ for field in $FIELDS; do
     KEY=$(_jq '.key')
     VALUE=$(_jq '.value')
 
-    echo ""
-    echo "$KEY:"
+    pad_line ""
+    pad_line "$KEY:"
 
     if echo "$VALUE" | jq -e 'type == "object"' > /dev/null; then
         SESSIONS=$(echo "$VALUE" | jq -r 'to_entries[] | @base64')
@@ -35,19 +38,18 @@ for field in $FIELDS; do
             SUBVALUE=$(decode '.value')
 
             if [[ "$SUBVALUE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T ]]; then
-                # Convert UTC to local time
                 LOCAL_DATE=$(date -d "$SUBVALUE" +"%d.%m.%Y %H:%M")
-                echo "  $SUBKEY: $LOCAL_DATE"
+                pad_line "  $SUBKEY: $LOCAL_DATE"
             elif [ "$SUBKEY" = "time_until_event" ]; then
                 CLEANED=$(echo "$SUBVALUE" | sed -E 's/([0-9]+) days ([0-9]+):([0-9]+):.*/\1 days \2 hours \3 minutes/')
-                echo "  Time Until Event: $CLEANED"
+                pad_line "  Time Until Event: $CLEANED"
             elif [ "$SUBKEY" = "status" ]; then
-                echo "  Status: $SUBVALUE"
+                pad_line "  Status: $SUBVALUE"
             else
-                echo "  $SUBKEY: $SUBVALUE"
+                pad_line "  $SUBKEY: $SUBVALUE"
             fi
         done
     else
-        echo "  $VALUE"
+        pad_line "  $VALUE"
     fi
 done
