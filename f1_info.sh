@@ -22,7 +22,7 @@ for field in $FIELDS; do
 
     echo ""
     echo "$KEY:"
-    
+
     if echo "$VALUE" | jq -e 'type == "object"' > /dev/null; then
         SESSIONS=$(echo "$VALUE" | jq -r 'to_entries[] | @base64')
 
@@ -51,4 +51,3 @@ for field in $FIELDS; do
         echo "  $VALUE"
     fi
 done
-
