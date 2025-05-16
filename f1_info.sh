@@ -6,6 +6,8 @@ pad_line() {
     printf "%-${width}s\n" "$text"
 }
 
+
+
 API_URL="http://127.0.0.1:5000/events/next"
 RESPONSE=$(curl -s "$API_URL")
 
@@ -42,7 +44,13 @@ for field in $FIELDS; do
                 pad_line "  $SUBKEY: $LOCAL_DATE"
             elif [ "$SUBKEY" = "time_until_event" ]; then
                 CLEANED=$(echo "$SUBVALUE" | sed -E 's/([0-9]+) days ([0-9]+):([0-9]+):.*/\1 days \2 hours \3 minutes/')
-                pad_line "  Time Until Event: $CLEANED"
+                DAYS=$(echo "$SUBVALUE" | grep -oP '^\d+(?= days)' || echo 0)
+                HOURS=$(echo "$SUBVALUE" | sed -E 's/.* ([0-9]+):([0-9]+):.*/\1/')
+                if [ "$DAYS" -eq 0 ] && [ "$HOURS" -lt 1 ]; then
+                    pad_line "!!!!!  Time Until Event: $CLEANED   !!!!!!"
+                else
+                    pad_line "  Time Until Event: $CLEANED"
+                fi
             elif [ "$SUBKEY" = "status" ]; then
                 pad_line "  Status: $SUBVALUE"
             else
@@ -53,3 +61,6 @@ for field in $FIELDS; do
         pad_line "  $VALUE"
     fi
 done
+
+# Add extra blank lines to clear any leftover text in Conky
+for i in {1..10}; do pad_line ""; done
